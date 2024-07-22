@@ -67,7 +67,7 @@ class Object:
 
 class Player(Object):
 
-  def __init__(self, world, pos):
+  def __init__(self, world, pos, no_die):
     super().__init__(world, pos)
     self.facing = (0, 1)
     self.inventory = {
@@ -80,6 +80,8 @@ class Player(Object):
     self._thirst = 0
     self._fatigue = 0
     self._recover = 0
+
+    self.no_die = no_die
 
   @property
   def texture(self):
@@ -131,6 +133,9 @@ class Player(Object):
     self._wake_up_when_hurt()
 
   def _update_life_stats(self):
+    if self.no_die:
+      return
+
     self._hunger += 0.5 if self.sleeping else 1
     if self._hunger > 25:
       self._hunger = 0
@@ -151,6 +156,8 @@ class Player(Object):
       self.inventory['energy'] -= 1
 
   def _degen_or_regen_health(self):
+    if self.no_die:
+      return
     necessities = (
         self.inventory['food'] > 0,
         self.inventory['drink'] > 0,
@@ -176,6 +183,8 @@ class Player(Object):
     self.facing = directions[direction]
     self.move(self.facing)
     if self.world[self.pos][0] == 'lava':
+      if self.no_die:
+        return
       self.health = 0
 
   def _do_object(self, obj):
@@ -308,7 +317,8 @@ class Zombie(Object):
           damage = 7
         else:
           damage = 2
-        self.player.health -= damage
+        if not self.player.no_die:
+          self.player.health -= damage
         self.cooldown = 5
 
 
@@ -374,7 +384,10 @@ class Arrow(Object):
     target = self.pos + self.facing
     material, obj = self.world[target]
     if obj:
-      obj.health -= 2
+      if isinstance(obj, Player) and obj.no_die:
+        pass
+      else:
+        obj.health -= 2
       self.world.remove(self)
     elif material not in self.walkable:
       self.world.remove(self)

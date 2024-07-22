@@ -26,7 +26,8 @@ class Env(BaseClass):
 
   def __init__(
       self, area=(64, 64), view=(9, 9), size=(64, 64),
-      reward=True, length=10000, seed=None):
+      reward=True, length=500, seed=None,
+      no_die=True):
     view = np.array(view if hasattr(view, '__len__') else (view, view))
     size = np.array(size if hasattr(size, '__len__') else (size, size))
     seed = np.random.randint(0, 2**31 - 1) if seed is None else seed
@@ -55,6 +56,8 @@ class Env(BaseClass):
     self.reward_range = None
     self.metadata = None
 
+    self.no_die = no_die
+
   @property
   def observation_space(self):
     return BoxSpace(0, 255, tuple(self._size) + (3,), np.uint8)
@@ -73,7 +76,7 @@ class Env(BaseClass):
     self._step = 0
     self._world.reset(seed=hash((self._seed, self._episode)) % (2 ** 31 - 1))
     self._update_time()
-    self._player = objects.Player(self._world, center)
+    self._player = objects.Player(self._world, center, self.no_die)
     self._last_health = self._player.health
     self._world.add(self._player)
     self._unlocked = set()
@@ -118,12 +121,12 @@ class Env(BaseClass):
     return obs, reward, done, info
 
   def render(self, size=None):
-    size = size or self._size
-    unit = size // self._view
-    canvas = np.zeros(tuple(size) + (3,), np.uint8)
+    size = size or self._size # 64
+    unit = size // self._view # 64 // 9 = 7
+    canvas = np.zeros(tuple(size) + (3,), np.uint8) # (64, 64, 3)
     local_view = self._local_view(self._player, unit)
     item_view = self._item_view(self._player.inventory, unit)
-    view = np.concatenate([local_view, item_view], 1)
+    view = np.concatenate([local_view, item_view], 1) # (63, 63, 3)
     border = (size - (size // self._view) * self._view) // 2
     (x, y), (w, h) = border, view.shape[:2]
     canvas[x: x + w, y: y + h] = view

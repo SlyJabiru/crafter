@@ -16,7 +16,7 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--seed', type=int, default=None)
   parser.add_argument('--area', nargs=2, type=int, default=(64, 64))
-  parser.add_argument('--view', type=int, nargs=2, default=(9, 9))
+  parser.add_argument('--view', type=int, nargs=2, default=(32, 32))
   parser.add_argument('--length', type=int, default=None)
   parser.add_argument('--health', type=int, default=9)
   parser.add_argument('--window', type=int, nargs=2, default=(600, 600))
